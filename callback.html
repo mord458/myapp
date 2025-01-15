@@ -19,7 +19,7 @@
             document.getElementById('status').innerHTML = `Error: ${error}`;
         } else if (code) {
             // Отправляем код на сервер для обмена на access_token
-            fetch('https://your-server.com/exchange_code', {
+            fetch('http://localhost:3000/exchange_code', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
