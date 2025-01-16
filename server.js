@@ -30,9 +30,9 @@ app.post('/exchange_code', async (req, res) => {
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         code: code,
-        client_id: 5dc83c9dc8b34cff982c2775311a9419,
-        client_secret: 0a3de2b01b68413b816f620edb1e167d,
-        redirect_uri: https://mord458.github.io/myapp/callback.html,
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        redirect_uri: REDIRECT_URI,
       }),
     });
 
