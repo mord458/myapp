@@ -23,19 +23,17 @@
             console.log('Received code:', code);
 
             // Если используется параметр state, также отправляем его на сервер
-            if (state) {
-                console.log('State parameter:', state);
-            }
+            console.log('State parameter:', state);
 
             // Отправляем код на сервер для обмена на access_token
-            fetch('https://3d1e-194-54-159-206.ngrok-free.app/exchange_code', {  // Измените на свой адрес
+            fetch('https://3d1e-194-54-159-206.ngrok-free.app/exchange_code', {  // Используйте актуальный адрес
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ 
                     code: code, 
-                    state: state  // отправляем state, если он есть
+                    state: state || ''  // Если state нет, отправляем пустую строку
                 }),
             })
             .then(response => response.json())
@@ -43,6 +41,7 @@
                 if (data.access_token) {
                     document.getElementById('status').innerHTML = `Access Token: ${data.access_token}`;
                 } else {
+                    console.error('Response data:', data);
                     document.getElementById('status').innerHTML = 'Error receiving token.';
                 }
             })
