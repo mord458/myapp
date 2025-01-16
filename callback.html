@@ -1,4 +1,4 @@
-PE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -28,7 +28,7 @@ PE html>
             }
 
             // Отправляем код на сервер для обмена на access_token
-            fetch('https://3d1e-194-54-159-206.ngrok-free.app ', {  // Измените на свой адрес
+            fetch('https://3d1e-194-54-159-206.ngrok-free.app/exchange_code', {  // Измените на свой адрес
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -57,7 +57,3 @@ PE html>
 </body>
 </html>
 
-
-    </script>
-</body>
-</html>
