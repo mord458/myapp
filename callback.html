@@ -18,8 +18,9 @@
         if (error) {
             document.getElementById('status').innerHTML = `Error: ${error}`;
         } else if (code) {
+            console.log('Received code:', code); // Отладка: выводим полученный код
             // Отправляем код на сервер для обмена на access_token
-            fetch('https://your-server.com/exchange_code', {
+            fetch('http://localhost:3000/exchange_code', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
