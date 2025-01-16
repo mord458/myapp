@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+PE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -10,22 +10,33 @@
     <p id="status">Processing...</p>
 
     <script>
-        // Получаем код из URL
+        // Получаем параметры из URL
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         const error = urlParams.get('error');
+        const state = urlParams.get('state');  // Если используется параметр state
 
+        // Если есть ошибка, выводим ее
         if (error) {
             document.getElementById('status').innerHTML = `Error: ${error}`;
         } else if (code) {
-            console.log('Received code:', code); // Отладка: выводим полученный код
+            console.log('Received code:', code);
+
+            // Если используется параметр state, также отправляем его на сервер
+            if (state) {
+                console.log('State parameter:', state);
+            }
+
             // Отправляем код на сервер для обмена на access_token
-            fetch('http://localhost:3000/exchange_code', {
+            fetch('https://3d1e-194-54-159-206.ngrok-free.app ', {  // Измените на свой адрес
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ code: code }),
+                body: JSON.stringify({ 
+                    code: code, 
+                    state: state  // отправляем state, если он есть
+                }),
             })
             .then(response => response.json())
             .then(data => {
@@ -42,6 +53,11 @@
         } else {
             document.getElementById('status').innerHTML = 'No code found in URL.';
         }
+    </script>
+</body>
+</html>
+
+
     </script>
 </body>
 </html>
