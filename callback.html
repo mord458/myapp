@@ -14,7 +14,12 @@
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         const error = urlParams.get('error');
-        const state = urlParams.get('state');  // Если используется параметр state
+        const state = urlParams.get('state'); // Если используется параметр state
+
+        // Логирование для отладки
+        console.log('Code:', code);
+        console.log('Error:', error);
+        console.log('State:', state);
 
         // Если есть ошибка, выводим ее
         if (error) {
@@ -22,11 +27,8 @@
         } else if (code) {
             console.log('Received code:', code);
 
-            // Если используется параметр state, также отправляем его на сервер
-            console.log('State parameter:', state);
-
             // Отправляем код на сервер для обмена на access_token
-            fetch('https://a216-194-54-159-206.ngrok-free.app/exchange_code', {  // Используйте актуальный адрес
+            fetch('https://a216-194-54-159-206.ngrok-free.app/exchange_code', { // Убедитесь, что URL актуальный
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -36,7 +38,12 @@
                     state: state || ''  // Если state нет, отправляем пустую строку
                 }),
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.access_token) {
                     document.getElementById('status').innerHTML = `Access Token: ${data.access_token}`;
@@ -47,12 +54,14 @@
             })
             .catch(error => {
                 document.getElementById('status').innerHTML = 'Error during processing.';
-                console.error(error);
+                console.error('Error during fetch:', error);
             });
         } else {
-            document.getElementById('status').innerHTML = 'No code found in URL.';
+            document.getElementById('status').innerHTML = 'No code or error parameter in URL.';
+            console.error('URL missing "code" or "error" parameters.');
         }
     </script>
 </body>
 </html>
+
 
