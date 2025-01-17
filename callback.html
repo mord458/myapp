@@ -45,11 +45,12 @@
                 return response.json();
             })
             .then(data => {
-                if (data.access_token) {
-                    document.getElementById('status').innerHTML = `Access Token: ${data.access_token}`;
+                if (data.redirectUrl) {
+                    // Перенаправляем на мобильное приложение
+                    window.location.href = data.redirectUrl; // Перенаправляем на мобильное приложение
                 } else {
-                    console.error('Response data:', data);
                     document.getElementById('status').innerHTML = 'Error receiving token.';
+                    console.error('No redirectUrl in response:', data);
                 }
             })
             .catch(error => {
@@ -63,5 +64,4 @@
     </script>
 </body>
 </html>
-
 
