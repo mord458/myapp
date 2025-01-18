@@ -45,9 +45,14 @@
                 return response.json();
             })
             .then(data => {
+                console.log('Response from server:', data); // Логирование ответа сервера
+
                 if (data.redirectUrl) {
                     // Перенаправляем на мобильное приложение
-                    window.location.href = data.redirectUrl; // Перенаправляем на мобильное приложение
+                    window.location.href = data.redirectUrl;
+                } else if (data.error) {
+                    // Если сервер вернул ошибку
+                    document.getElementById('status').innerHTML = `Error: ${data.error}`;
                 } else {
                     document.getElementById('status').innerHTML = 'Error receiving token.';
                     console.error('No redirectUrl in response:', data);
