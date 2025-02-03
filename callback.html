@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://oauth.yandex.ru; connect-src https://your-api-domain.com;">
     <title>OAuth Callback - Yandex</title>
 </head>
 <body>
@@ -11,78 +10,59 @@
     <p id="status">Processing...</p>
 
     <script>
-        const API_URL = 'https://7ff1-194-54-159-206.ngrok-free.app'; // Замените на ваш домен API
-        
         // Получаем параметры из URL
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         const error = urlParams.get('error');
-        const state = urlParams.get('state');
+        const state = urlParams.get('state');  // Если используется параметр state
 
-        // Проверяем state из localStorage
-        const savedState = localStorage.getItem('oauth_state');
-        localStorage.removeItem('oauth_state'); // Сразу удаляем использованный state
-
-        // Функция для безопасного отображения статуса
-        function setStatus(message) {
-            document.getElementById('status').textContent = message;
-        }
-
+        // Если есть ошибка, выводим ее
         if (error) {
-            setStatus(`Error: ${error}`);
-        } else if (!code) {
-            setStatus('No code found in URL.');
-        } else if (!state || state !== savedState) {
-            setStatus('Invalid state parameter. Please try again.');
-        } else {
+            document.getElementById('status').innerHTML = `Error: ${error}`;
+        } else if (code) {
+            console.log('Received code:', code);
+
+            // Если используется параметр state, также отправляем его на сервер
+            if (state) {
+                console.log('State parameter:', state);
+            }
+
             // Отправляем код на сервер для обмена на access_token
-            fetch(`${API_URL}/exchange_code`, {
-                method: 'POST',
+            fetch(`${API_URL}/api/auth/yandex/callback?code=${code}&state=${state}`, {
+                method: 'GET',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                credentials: 'include',
-                body: JSON.stringify({ 
-                    code: code,
-                    state: state
-                })
+                credentials: 'include'
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    setStatus('Authorization successful! You can close this window.');
-                    // Отправляем сообщение родительскому окну
+                    setStatus('Authorization successful! Closing window...', 'success');
                     if (window.opener && window.opener.postMessage) {
                         window.opener.postMessage({
                             type: 'OAUTH_SUCCESS',
-                            success: true
-                        }, window.location.origin);
+                            data: {
+                                accessToken: data.accessToken,
+                                refreshToken: data.refreshToken
+                            }
+                        }, '*');
                     }
-                    // Закрываем окно через небольшую задержку
                     setTimeout(() => window.close(), 2000);
                 } else {
                     throw new Error(data.error || 'Authorization failed');
                 }
             })
             .catch(error => {
-                setStatus('Error during authorization. Please try again.');
-                console.error('Auth error:', error);
-                
-                // Отправляем сообщение об ошибке родительскому окну
-                if (window.opener && window.opener.postMessage) {
-                    window.opener.postMessage({
-                        type: 'OAUTH_ERROR',
-                        error: error.message
-                    }, window.location.origin);
-                }
+                document.getElementById('status').innerHTML = 'Error during processing.';
+                console.error(error);
             });
+        } else {
+            document.getElementById('status').innerHTML = 'No code found in URL.';
         }
     </script>
 </body>
 </html>
+
+
