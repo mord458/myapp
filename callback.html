@@ -7,63 +7,47 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
+            text-align: center;
+            padding: 20px;
             background-color: #f5f5f5;
         }
-        .status {
-            padding: 20px;
-            border-radius: 8px;
+        #status {
+            margin: 20px;
+            padding: 15px;
+            border-radius: 4px;
             background-color: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin: 20px;
-            text-align: center;
         }
-        .error { color: #dc3545; }
-        .success { color: #28a745; }
     </style>
 </head>
 <body>
-    <div class="status" id="status">Processing authentication...</div>
+    <div id="status">Processing authentication...</div>
 
     <script>
-        const API_URL = 'https://c1e4-194-54-159-206.ngrok-free.app'; // Например: 'https://api.yourapp.com'
+        const API_URL = 'https://c1e4-194-54-159-206.ngrok-free.app'; // Update with your backend URL
         
-        function setStatus(message, type = 'info') {
-            const statusEl = document.getElementById('status');
-            statusEl.textContent = message;
-            statusEl.className = `status ${type}`;
-        }
-
-        // Обработка параметров URL
+        // Get URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
-        const error = urlParams.get('error');
         const state = urlParams.get('state');
+        const error = urlParams.get('error');
 
         if (error) {
-            setStatus(`Authentication error: ${error}`, 'error');
+            document.getElementById('status').textContent = `Error: ${error}`;
         } else if (code) {
-            // Отправляем код на сервер
-            fetch(`${API_URL}/api/auth/yandex/callback`, {
+            fetch(`${API_URL}/api/auth/yandex/exchange_code`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ code, state })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.accessToken) {
-                    setStatus('Authorization successful!', 'success');
-                    // Отправляем данные в родительское окно (мобильное приложение)
+                    document.getElementById('status').textContent = 'Authentication successful!';
+                    // Send data to mobile app
                     if (window.ReactNativeWebView) {
-                        // Для React Native WebView
                         window.ReactNativeWebView.postMessage(JSON.stringify({
                             type: 'AUTH_SUCCESS',
                             data: {
@@ -73,31 +57,23 @@
                                 tokenType: data.tokenType
                             }
                         }));
-                    } else if (window.opener) {
-                        // Для браузера
-                        window.opener.postMessage({
-                            type: 'AUTH_SUCCESS',
-                            data: {
-                                accessToken: data.accessToken,
-                                refreshToken: data.refreshToken,
-                                expiresIn: data.expiresIn,
-                                tokenType: data.tokenType
-                            }
-                        }, '*');
-                        setTimeout(() => window.close(), 2000);
                     }
                 } else {
                     throw new Error(data.error || 'Authentication failed');
                 }
             })
             .catch(error => {
-                setStatus(`Authentication failed: ${error.message}`, 'error');
+                document.getElementById('status').textContent = `Error: ${error.message}`;
+                if (window.ReactNativeWebView) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify({
+                        type: 'AUTH_ERROR',
+                        error: error.message
+                    }));
+                }
             });
         } else {
-            setStatus('No authentication code received', 'error');
+            document.getElementById('status').textContent = 'No authentication code received';
         }
     </script>
 </body>
 </html>
-
-
