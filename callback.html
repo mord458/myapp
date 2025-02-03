@@ -4,62 +4,97 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OAuth Callback - Yandex</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        .status {
+            padding: 20px;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 20px;
+            text-align: center;
+        }
+        .error { color: #dc3545; }
+        .success { color: #28a745; }
+    </style>
 </head>
 <body>
-    <h1>OAuth Callback - Yandex</h1>
-    <p id="status">Processing...</p>
+    <div class="status" id="status">Processing authentication...</div>
 
     <script>
-        // Получаем параметры из URL
+        const API_URL = 'https://c1e4-194-54-159-206.ngrok-free.app'; // Например: 'https://api.yourapp.com'
+        
+        function setStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+
+        // Обработка параметров URL
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         const error = urlParams.get('error');
-        const state = urlParams.get('state');  // Если используется параметр state
+        const state = urlParams.get('state');
 
-        // Если есть ошибка, выводим ее
         if (error) {
-            document.getElementById('status').innerHTML = `Error: ${error}`;
+            setStatus(`Authentication error: ${error}`, 'error');
         } else if (code) {
-            console.log('Received code:', code);
-
-            // Если используется параметр state, также отправляем его на сервер
-            if (state) {
-                console.log('State parameter:', state);
-            }
-
-            // Отправляем код на сервер для обмена на access_token
-            fetch(`${API_URL}/api/auth/yandex/callback?code=${code}&state=${state}`, {
-                method: 'GET',
+            // Отправляем код на сервер
+            fetch(`${API_URL}/api/auth/yandex/callback`, {
+                method: 'POST',
                 headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
-                credentials: 'include'
+                body: JSON.stringify({ code, state })
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    setStatus('Authorization successful! Closing window...', 'success');
-                    if (window.opener && window.opener.postMessage) {
-                        window.opener.postMessage({
-                            type: 'OAUTH_SUCCESS',
+                if (data.accessToken) {
+                    setStatus('Authorization successful!', 'success');
+                    // Отправляем данные в родительское окно (мобильное приложение)
+                    if (window.ReactNativeWebView) {
+                        // Для React Native WebView
+                        window.ReactNativeWebView.postMessage(JSON.stringify({
+                            type: 'AUTH_SUCCESS',
                             data: {
                                 accessToken: data.accessToken,
-                                refreshToken: data.refreshToken
+                                refreshToken: data.refreshToken,
+                                expiresIn: data.expiresIn,
+                                tokenType: data.tokenType
+                            }
+                        }));
+                    } else if (window.opener) {
+                        // Для браузера
+                        window.opener.postMessage({
+                            type: 'AUTH_SUCCESS',
+                            data: {
+                                accessToken: data.accessToken,
+                                refreshToken: data.refreshToken,
+                                expiresIn: data.expiresIn,
+                                tokenType: data.tokenType
                             }
                         }, '*');
+                        setTimeout(() => window.close(), 2000);
                     }
-                    setTimeout(() => window.close(), 2000);
                 } else {
-                    throw new Error(data.error || 'Authorization failed');
+                    throw new Error(data.error || 'Authentication failed');
                 }
             })
             .catch(error => {
-                document.getElementById('status').innerHTML = 'Error during processing.';
-                console.error(error);
+                setStatus(`Authentication failed: ${error.message}`, 'error');
             });
         } else {
-            document.getElementById('status').innerHTML = 'No code found in URL.';
+            setStatus('No authentication code received', 'error');
         }
     </script>
 </body>
