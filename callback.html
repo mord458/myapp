@@ -1,79 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OAuth Callback - Yandex</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        #status {
-            margin: 20px;
-            padding: 15px;
-            border-radius: 4px;
-            background-color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OAuth Callback - Yandex</title>
+  <style>
+      body {
+          font-family: Arial, sans-serif;
+          text-align: center;
+          padding: 20px;
+          background-color: #f5f5f5;
+      }
+      #status {
+          margin: 20px;
+          padding: 15px;
+          border-radius: 4px;
+          background-color: white;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+  </style>
 </head>
 <body>
-    <div id="status">Processing authentication...</div>
+  <div id="status">Processing authentication...</div>
 
-    <script>
-        const API_URL = 'https://c157-194-54-159-206.ngrok-free.app'; // Update with your backend URL
-        
-        // Get URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        const state = urlParams.get('state');
-        const error = urlParams.get('error');
+  <script>
+      // Обновите URL на URL вашего сервера
+      const API_URL = 'https://c157-194-54-159-206.ngrok-free.app';
+      
+      // Получаем параметры из URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const state = urlParams.get('state');
+      const error = urlParams.get('error');
 
-        if (error) {
-            document.getElementById('status').textContent = `Error: ${error}`;
-        } else if (code) {
-            fetch(`${API_URL}/api/auth/yandex/exchange_code`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ code, state })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.accessToken) {
-                    document.getElementById('status').textContent = 'Authentication successful!';
-                    // Send data to mobile app
-                    if (window.ReactNativeWebView) {
-                        window.ReactNativeWebView.postMessage(JSON.stringify({
-                            type: 'AUTH_SUCCESS',
-                            data: {
-                                accessToken: data.accessToken,
-                                refreshToken: data.refreshToken,
-                                expiresIn: data.expiresIn,
-                                tokenType: data.tokenType
-                            }
-                        }));
-                    }
-                } else {
-                    throw new Error(data.error || 'Authentication failed');
-                }
-            })
-            .catch(error => {
-                document.getElementById('status').textContent = `Error: ${error.message}`;
-                if (window.ReactNativeWebView) {
-                    window.ReactNativeWebView.postMessage(JSON.stringify({
-                        type: 'AUTH_ERROR',
-                        error: error.message
-                    }));
-                }
-            });
-        } else {
-            document.getElementById('status').textContent = 'No authentication code received';
-        }
-    </script>
+      if (error) {
+          document.getElementById('status').textContent = `Error: ${error}`;
+      } else if (code) {
+          // Отправляем запрос на обмен кода на токен
+          fetch(`${API_URL}/api/auth/yandex/exchange_code`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ code, state })
+          })
+          .then(response => response.json())
+          .then(data => {
+              // Если сервер возвращает access_token (с нижним подчёркиванием), проверяем его
+              if (data.access_token) {
+                  document.getElementById('status').textContent = 'Authentication successful!';
+                  // Передача данных, если страница отображается внутри React Native WebView
+                  if (window.ReactNativeWebView) {
+                      window.ReactNativeWebView.postMessage(JSON.stringify({
+                          type: 'AUTH_SUCCESS',
+                          data: data
+                      }));
+                  }
+              } else {
+                  throw new Error(data.error || 'Authentication failed');
+              }
+          })
+          .catch(err => {
+              document.getElementById('status').textContent = `Error: ${err.message}`;
+              if (window.ReactNativeWebView) {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({
+                      type: 'AUTH_ERROR',
+                      error: err.message
+                  }));
+              }
+          });
+      } else {
+          document.getElementById('status').textContent = 'No authentication code received';
+      }
+  </script>
 </body>
 </html>
